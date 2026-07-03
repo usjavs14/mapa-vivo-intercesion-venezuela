@@ -10,6 +10,7 @@ type Focus = {
   titulo: string
   descripcion: string | null
   ciudad: string
+  estado_ve: string | null
   estado: string
   categoria: string
   urgencia: string
@@ -21,7 +22,6 @@ type Focus = {
 }
 
 const VE_CENTER: [number, number] = [8.0, -66.0]
-
 const URGENCIA_COLOR: Record<string, string> = {
   alta: '#fc8181',
   media: '#f6ad55',
@@ -32,7 +32,6 @@ export default function App() {
   const { user, loading } = useAuth()
   useHeartbeat(user?.id)
   const presenceCount = usePresence()
-
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<L.Map | null>(null)
   const markersRef = useRef<L.CircleMarker[]>([])
@@ -53,7 +52,7 @@ export default function App() {
     if (!mapRef.current || mapInstanceRef.current) return
     const map = L.map(mapRef.current, { zoomControl: true }).setView(VE_CENTER, 6)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap',
+      attribution: '\u00a9 OpenStreetMap',
       maxZoom: 18,
     }).addTo(map)
     mapInstanceRef.current = map
@@ -64,7 +63,7 @@ export default function App() {
     async function load() {
       const { data } = await supabase
         .from('focuses')
-        .select('id,titulo,descripcion,ciudad,estado,categoria,urgencia,lat,lng,aprobado,intercesores,orando_ahora')
+        .select('id,titulo,descripcion,ciudad,estado_ve,estado,categoria,urgencia,lat,lng,aprobado,intercesores,orando_ahora')
         .eq('aprobado', true)
         .order('urgencia', { ascending: true })
       if (data) setFocuses(data as Focus[])
@@ -79,6 +78,7 @@ export default function App() {
     markersRef.current = []
     focuses.forEach(f => {
       const color = URGENCIA_COLOR[f.urgencia] ?? '#90cdf4'
+      const ubicacion = f.estado_ve ? `${f.ciudad}, ${f.estado_ve}` : f.ciudad
       const marker = L.circleMarker([f.lat, f.lng], {
         radius: 10 + Math.min(f.orando_ahora, 20),
         fillColor: color,
@@ -87,16 +87,16 @@ export default function App() {
         opacity: 0.9,
         fillOpacity: 0.75,
       })
-        .addTo(map)
-        .bindPopup(
-          `<div style="font-family:sans-serif;min-width:180px">
-            <b style="color:#1a365d">${f.titulo}</b><br/>
-            <small>${f.ciudad}, ${f.estado}</small><br/>
-            <span style="color:#718096">${f.descripcion ?? ''}</span><br/>
-            <small>Categoria: <b>${f.categoria}</b> | Urgencia: <b style="color:${color}">${f.urgencia}</b></small><br/>
-            <small>Intercesores: <b>${f.intercesores}</b> | Orando ahora: <b>${f.orando_ahora}</b></small>
-          </div>`
-        )
+      .addTo(map)
+      .bindPopup(
+        `<div style="font-family:sans-serif;min-width:180px">
+          <b style="color:#1a365d">${f.titulo}</b><br/><br>
+          <small>${ubicacion}</small><br/><br>
+          <span style="color:#718096">${f.descripcion ?? ''}</span><br/><br>
+          <small>Categoria: <b>${f.categoria}</b> | Urgencia: <b style="color:${color}">${f.urgencia}</b></small><br/><br>
+          <small>Intercesores: <b>${f.intercesores}</b> | Orando ahora: <b>${f.orando_ahora}</b></small>
+        </div>`
+      )
       markersRef.current.push(marker)
     })
   }, [focuses])
@@ -118,9 +118,9 @@ export default function App() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#0f172a' }}>
       <header style={headerStyle}>
         <div>
-          <h1 style={{ fontSize: 16, fontWeight: 700, color: '#90cdf4', margin: 0 }}>Mapa Vivo — Intercesion Venezuela</h1>
+          <h1 style={{ fontSize: 16, fontWeight: 700, color: '#90cdf4', margin: 0 }}>Mapa Vivo \u2014 Intercesion Venezuela</h1>
           <p style={{ fontSize: 12, color: offline ? '#fc8181' : '#68d391', margin: '2px 0 0 0' }}>
-            {offline ? '⚠ Sin conexion' : `${presenceCount} intercesores activos ahora`}
+            {offline ? '\u26a0 Sin conexion' : `${presenceCount} intercesores activos ahora`}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -135,18 +135,15 @@ export default function App() {
           )}
         </div>
       </header>
-
       {focuses.length > 0 && (
         <div style={legendBar}>
-          <span style={{ color: '#fc8181', fontSize: 12 }}>● Alta</span>
-          <span style={{ color: '#f6ad55', fontSize: 12, marginLeft: 12 }}>● Media</span>
-          <span style={{ color: '#68d391', fontSize: 12, marginLeft: 12 }}>● Baja urgencia</span>
+          <span style={{ color: '#fc8181', fontSize: 12 }}>\u25cf Alta</span>
+          <span style={{ color: '#f6ad55', fontSize: 12, marginLeft: 12 }}>\u25cf Media</span>
+          <span style={{ color: '#68d391', fontSize: 12, marginLeft: 12 }}>\u25cf Baja urgencia</span>
           <span style={{ color: '#a0aec0', fontSize: 12, marginLeft: 20 }}>{focuses.length} causas activas</span>
         </div>
       )}
-
       <div ref={mapRef} style={{ flex: 1 }} />
-
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
       {showPropon && user && <ProponesCausa user={user} onClose={() => setShowPropon(false)} />}
     </div>
