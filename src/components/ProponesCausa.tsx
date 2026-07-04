@@ -15,7 +15,7 @@ const ESTADOS_VE = [
 ]
 
 const CATEGORIAS = ['emergencia','gobierno','salud','juventud','familia','iglesia']
-const URGENCIAS = ['baja','media','alta']
+// URGENCIAS used inline in JSX
 const ESTADOS_FOCUS = ['sin_cobertura','cadena_activa','respuesta_practica','testimonio']
 
 export default function ProponesCausa({ user, onClose }: Props) {
