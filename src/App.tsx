@@ -1,5 +1,5 @@
 /// <reference types="vite/client" />
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useAuth, useHeartbeat, supabase } from './hooks/useSupabase'
@@ -65,20 +65,31 @@ export default function App() {
     return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off) }
   }, [])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return
-    const map = L.map(mapRef.current, { zoomControl: true }).setView(VE_CENTER, 6)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: '\u00a9 OpenStreetMap \u00a9 CARTO',
-      maxZoom: 19,
-    }).addTo(map)
-    mapInstanceRef.current = map
-    requestAnimationFrame(() => {
-      map.invalidateSize()
-      setMapReady(true)
-    })
-    return () => { map.remove(); mapInstanceRef.current = null }
-  }, [])
+    const el = mapRef.current
+    if (!el.offsetWidth || !el.offsetHeight) return
+    try {
+      const map = L.map(el, { zoomControl: true }).setView(VE_CENTER, 6)
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '\u00a9 OpenStreetMap contributors',
+        maxZoom: 19,
+      }).addTo(map)
+      mapInstanceRef.current = map
+      setTimeout(() => {
+        map.invalidateSize()
+        setMapReady(true)
+      }, 200)
+    } catch (e) {
+      console.error('Map init error:', e)
+    }
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove()
+        mapInstanceRef.current = null
+      }
+    }
+  }, [loading])
 
   useEffect(() => {
     async function load() {
@@ -126,9 +137,13 @@ export default function App() {
 
   async function handleSignOut() { await supabase.auth.signOut() }
 
-  if (loading) return <div style={{ padding: 20, background: '#0b0f1a', color: '#fff', height: '100vh' }}>Cargando...</div>
-
   const totalInterc = focuses.reduce((a, f) => a + (f.intercesores ?? 0), 0)
+
+  if (loading) return (
+    <div style={{ padding: 20, background: '#0b0f1a', color: '#fff', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      Cargando...
+    </div>
+  )
 
   return (
     <div style={{ display:'flex', flexDirection:'column', height:'100vh', overflow:'hidden', background:'#0b0f1a' }}>
@@ -161,7 +176,7 @@ export default function App() {
       </div>
 
       {/* MAPA */}
-      <div ref={mapRef} style={{ width:'100%', height:'calc(100vh - 110px)', minHeight:400 }} />
+      <div ref={mapRef} style={{ flex: 1, width:'100%', minHeight: 0 }}></div>
 
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
       {showPropon && user && <ProponesCausa user={user} onClose={() => setShowPropon(false)} />}
