@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { useAuth, useHeartbeat, usePresence, supabase } from './hooks/useSupabase'
+import { useAuth, useHeartbeat, supabase } from './hooks/useSupabase'
 import AuthModal from './components/AuthModal'
 import ProponesCausa from './components/ProponesCausa'
 
@@ -48,7 +48,6 @@ const ESTADO_LABEL: Record<string, string> = {
 export default function App() {
   const { user, loading } = useAuth()
   useHeartbeat(user?.id)
-  const _presence = usePresence()
   const mapRef           = useRef<HTMLDivElement>(null)
   const mapInstanceRef   = useRef<L.Map | null>(null)
   const markersRef       = useRef<L.CircleMarker[]>([])
@@ -173,5 +172,3 @@ export default function App() {
 const btnBlue:  React.CSSProperties = { padding:'8px 16px', borderRadius:8, background:'#3182ce', color:'#fff', border:'none', cursor:'pointer', fontWeight:600, fontSize:13 }
 const btnGreen: React.CSSProperties = { padding:'8px 16px', borderRadius:8, background:'#2f855a', color:'#fff', border:'none', cursor:'pointer', fontWeight:600, fontSize:13 }
 const btnGray:  React.CSSProperties = { padding:'8px 16px', borderRadius:8, background:'#4a5568', color:'#fff', border:'none', cursor:'pointer', fontSize:13 }
-
-void _presence
