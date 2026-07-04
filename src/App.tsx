@@ -48,7 +48,7 @@ const ESTADO_LABEL: Record<string, string> = {
 export default function App() {
   const { user, loading } = useAuth()
   useHeartbeat(user?.id)
-  const presenceCount = usePresence()
+    const _presence = usePresence()
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<L.Map | null>(null)
   const markersRef = useRef<L.CircleMarker[]>([])
